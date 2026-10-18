@@ -3,7 +3,7 @@
 //! Extracted from m2.rs to keep file sizes manageable.
 
 use super::m2_batch_data::TextureOverlay;
-use super::m2_format::parser::{M2TextureUnit, TextureTables};
+use crate::parser::{M2TextureUnit, TextureTables};
 
 /// Default FDIDs for runtime-resolved character texture types (human male, light skin).
 /// `skin_fdids` supplies creature variations 0..2 (types 11/12/13) and 3 (type 5).

@@ -9,8 +9,11 @@ const CHUNK_HEADER_SIZE: usize = 8;
 const SKIN_HEADER_SIZE: usize = 44;
 const U16_ARRAY_HEADER_STRIDE: usize = 4;
 const M2_ARRAY_HEADER_SIZE: usize = 8;
+#[cfg(feature = "textures")]
 const LOOKUP_ENTRY_SIZE_U32: usize = 4;
+#[cfg(feature = "textures")]
 const MD20_TRANSPARENCY_LOOKUP_COUNT_OFFSET: usize = 0x90;
+#[cfg(feature = "textures")]
 const MD20_UV_ANIMATION_LOOKUP_COUNT_OFFSET: usize = 0x98;
 
 #[derive(BinRead)]
@@ -52,11 +55,13 @@ struct RawM2Submesh {
 
 #[derive(BinRead)]
 #[br(little)]
+#[cfg(feature = "textures")]
 pub struct M2Material {
     pub flags: u16,
     pub blend_mode: u16,
 }
 
+#[cfg(feature = "textures")]
 pub struct M2TextureUnit {
     pub flags: u8,
     pub priority_plane: i8,
@@ -74,6 +79,7 @@ pub struct M2TextureUnit {
 
 #[derive(BinRead)]
 #[br(little)]
+#[cfg(feature = "textures")]
 struct RawM2TextureUnit {
     flags: u8,
     priority_plane: i8,
@@ -92,6 +98,7 @@ struct RawM2TextureUnit {
 
 #[derive(BinRead)]
 #[br(little)]
+#[cfg(feature = "textures")]
 struct M2TextureTypeEntry {
     texture_type: u32,
     flags: u32,
@@ -111,14 +118,15 @@ struct SkinHeader {
     _bone_indices_offset: u32,
     submesh_count: u32,
     submesh_offset: u32,
-    batch_count: u32,
-    batch_offset: u32,
+    _batch_count: u32,
+    _batch_offset: u32,
 }
 
 pub struct SkinData {
     pub lookup: Vec<u16>,
     pub indices: Vec<u16>,
     pub submeshes: Vec<M2Submesh>,
+    #[cfg(feature = "textures")]
     pub batches: Vec<M2TextureUnit>,
 }
 
@@ -134,6 +142,7 @@ pub struct M2Chunks<'a> {
     pub afid: Vec<(u16, u16, u32)>,
 }
 
+#[cfg(feature = "textures")]
 pub struct TextureTables<'a> {
     pub tex_lookup: &'a [u16],
     pub tex_types: &'a [u32],
@@ -249,15 +258,17 @@ pub fn parse_skin_full(data: &[u8]) -> Result<SkinData, String> {
         header.submesh_offset as usize,
         header.submesh_count as usize,
     )?;
+    #[cfg(feature = "textures")]
     let batches = parse_texture_units(
         data,
-        header.batch_offset as usize,
-        header.batch_count as usize,
+        header._batch_offset as usize,
+        header._batch_count as usize,
     )?;
     Ok(SkinData {
         lookup,
         indices,
         submeshes,
+        #[cfg(feature = "textures")]
         batches,
     })
 }
@@ -283,6 +294,7 @@ fn parse_submeshes(data: &[u8], offset: usize, count: usize) -> Result<Vec<M2Sub
     Ok(subs)
 }
 
+#[cfg(feature = "textures")]
 fn parse_texture_units(
     data: &[u8],
     offset: usize,
@@ -309,6 +321,7 @@ fn parse_texture_units(
     )
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_texture_types(md20: &[u8]) -> Result<Vec<u32>, String> {
     Ok(read_m2_array::<M2TextureTypeEntry>(
         md20,
@@ -321,6 +334,7 @@ pub fn parse_texture_types(md20: &[u8]) -> Result<Vec<u32>, String> {
 }
 
 /// M2Texture flags: 0x1 wraps U and 0x2 wraps V; without them the axis clamps.
+#[cfg(feature = "textures")]
 pub fn parse_texture_flags(md20: &[u8]) -> Result<Vec<u32>, String> {
     Ok(read_m2_array::<M2TextureTypeEntry>(
         md20,
@@ -332,16 +346,19 @@ pub fn parse_texture_flags(md20: &[u8]) -> Result<Vec<u32>, String> {
     .collect())
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_materials(md20: &[u8]) -> Result<Vec<M2Material>, String> {
     read_m2_array(md20, super::MD20_MATERIALS_COUNT_OFFSET, "material")
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_txid(data: &[u8]) -> Vec<u32> {
     (0..data.len() / LOOKUP_ENTRY_SIZE_U32)
         .filter_map(|i| read_u32(data, i * LOOKUP_ENTRY_SIZE_U32).ok())
         .collect()
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_texture_lookup(md20: &[u8]) -> Result<Vec<u16>, String> {
     read_m2_array(
         md20,
@@ -354,6 +371,7 @@ pub fn parse_model_flags(md20: &[u8]) -> Result<u32, String> {
     read_u32(md20, super::MD20_FLAGS_OFFSET)
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_texture_unit_lookup(md20: &[u8]) -> Result<Vec<i16>, String> {
     read_m2_array(
         md20,
@@ -362,14 +380,17 @@ pub fn parse_texture_unit_lookup(md20: &[u8]) -> Result<Vec<i16>, String> {
     )
 }
 
+#[cfg(feature = "textures")]
 fn parse_i16_lookup(md20: &[u8], header_off: usize, label: &str) -> Result<Vec<i16>, String> {
     read_m2_array(md20, header_off, &format!("{label} lookup"))
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_transparency_lookup(md20: &[u8]) -> Result<Vec<i16>, String> {
     parse_i16_lookup(md20, MD20_TRANSPARENCY_LOOKUP_COUNT_OFFSET, "transparency")
 }
 
+#[cfg(feature = "textures")]
 pub fn parse_uv_animation_lookup(md20: &[u8]) -> Result<Vec<i16>, String> {
     parse_i16_lookup(md20, MD20_UV_ANIMATION_LOOKUP_COUNT_OFFSET, "uv animation")
 }
