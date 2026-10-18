@@ -5,7 +5,7 @@ use super::*;
 use binrw::BinRead;
 use wow_chunk::{read_f32, read_i8, read_u32};
 
-fn parse_mcvt(payload: &[u8]) -> Result<[f32; MCVT_COUNT], String> {
+pub(super) fn parse_mcvt(payload: &[u8]) -> Result<[f32; MCVT_COUNT], String> {
     if payload.len() < MCVT_COUNT * 4 {
         return Err(format!(
             "MCVT too small: {} bytes (need {})",

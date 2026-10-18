@@ -450,7 +450,7 @@ fn parse_mliq_tiles(data: &[u8]) -> Vec<WmoLiquidTile> {
         .collect()
 }
 
-fn parse_vec3_array(data: &[u8]) -> Result<Vec<[f32; 3]>, String> {
+pub fn parse_vec3_array(data: &[u8]) -> Result<Vec<[f32; 3]>, String> {
     parse_binrw_entries(data, VEC3_ENTRY_SIZE, "vec3 array")
 }
 
@@ -458,7 +458,7 @@ fn parse_vec2_array(data: &[u8]) -> Result<Vec<[f32; 2]>, String> {
     parse_binrw_entries(data, VEC2_ENTRY_SIZE, "vec2 array")
 }
 
-fn parse_u16_array(data: &[u8]) -> Vec<u16> {
+pub fn parse_u16_array(data: &[u8]) -> Vec<u16> {
     data.chunks_exact(2)
         .map(|c| u16::from_le_bytes(c.try_into().unwrap()))
         .collect()

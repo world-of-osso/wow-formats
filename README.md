@@ -16,9 +16,9 @@ Default features preserve the client's complete parser surface. Geometry consume
 wow-m2 = { git = "https://github.com/world-of-osso/wow-formats.git", rev = "<commit>", default-features = false }
 ```
 
-`wow_m2::parser` exposes the original raw M2/skin readers; skin sections retain both the client's cumulative `triangle_start` and authored `raw_triangle_start` (indexStart plus level high bits). M2 first-bone-key readers preserve external/global sequence sources without requiring timestamps for a static pose. WDT exposes both the client's active-tile view and all raw MAID slots, leaving selection policy to consumers.
+`wow_m2::parser` exposes the original raw M2/skin readers; skin sections retain both the client's cumulative `triangle_start` and authored `raw_triangle_start` (indexStart plus level high bits). M2 first-bone-key readers preserve external/global sequence sources without requiring timestamps for a static pose. WDT exposes both the client's active-tile view and all raw MAID slots, leaving selection policy to consumers. The ADT height-only view keeps raw file origins/holes and does not require optional normals, texture payloads or companion shadows. M2 collision normals remain authored per-face geometry metadata, separate from the existing collision mesh.
 
- the `m2_anim`, `m2_collision`, and other format namespaces retain their names. `wow_adt::{adt, adt_tex, adt_obj, wdt}` and `wow_wmo::parser` retain the original namespaces. Client model assembly, coordinate adapters and simulation policies are not part of these crates.
+The `m2_anim`, `m2_collision`, and other format namespaces retain their names. `wow_adt::{adt, adt_tex, adt_obj, wdt}` and `wow_wmo::parser` retain the original namespaces. Client model assembly, coordinate adapters and simulation policies are not part of these crates.
 
 ## Provenance and scope
 

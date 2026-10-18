@@ -267,6 +267,50 @@ struct McnkHeader {
     pos_z: f32,
 }
 
+/// Height/hole metadata without optional rendering chunks, in authored file-axis order.
+pub struct TerrainHeightChunk {
+    pub origin: [f32; 3],
+    pub heights: [f32; MCVT_COUNT],
+    pub holes_low_res: u16,
+    pub holes_high_res: Option<u64>,
+}
+
+/// Geometry-only MCNK view; does not require normals, textures or companion shadows.
+pub fn parse_terrain_height_chunks(data: &[u8]) -> Result<Vec<TerrainHeightChunk>, String> {
+    let mut chunks = Vec::new();
+    for chunk in ChunkIter::new(data) {
+        let (tag, payload) = chunk?;
+        if tag == b"KNCM" {
+            chunks.push(parse_terrain_height_chunk(payload)?);
+        }
+    }
+    Ok(chunks)
+}
+
+fn parse_terrain_height_chunk(payload: &[u8]) -> Result<TerrainHeightChunk, String> {
+    const HEADER_BYTES: usize = 128;
+    if payload.len() < HEADER_BYTES {
+        return Err(format!("MCNK too small: {} bytes", payload.len()));
+    }
+    let header = McnkHeader::read_le(&mut Cursor::new(payload))
+        .map_err(|error| format!("MCNK header: {error}"))?;
+    let mut heights = None;
+    for chunk in ChunkIter::new(&payload[HEADER_BYTES..]) {
+        let (tag, data) = chunk?;
+        if tag == b"TVCM" {
+            heights = Some(parsing::parse_mcvt(data)?);
+            break;
+        }
+    }
+    Ok(TerrainHeightChunk {
+        origin: [header.pos_y, header.pos_x, header.pos_z],
+        heights: heights.ok_or("MCNK has no MCVT")?,
+        holes_low_res: header._holes_low_res,
+        holes_high_res: (header.flags & MCNK_FLAG_HIGH_RES_HOLES != 0)
+            .then_some(header._holes_high_res),
+    })
+}
+
 pub struct ParsedAdtData {
     pub chunks: Vec<McnkData>,
     pub blend_mesh: Option<BlendMeshData>,

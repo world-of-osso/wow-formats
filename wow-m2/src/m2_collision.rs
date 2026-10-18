@@ -8,6 +8,7 @@ use wow_chunk::read_m2_array_header;
 const COLLISION_BOUNDS_OFFSET: usize = 0xBC;
 const COLLISION_INDICES_OFFSET: usize = 0xD8;
 const COLLISION_VERTICES_OFFSET: usize = 0xE0;
+const COLLISION_NORMALS_OFFSET: usize = 0xE8;
 const VECTOR_BYTES: usize = 12;
 
 /// Positions and bounds remain in WoW model-local coordinates.
@@ -47,6 +48,28 @@ pub fn parse_collision_mesh(md20: &[u8]) -> Result<Option<M2CollisionMesh>, Stri
         vertices,
         indices,
     }))
+}
+
+/// Authored face normals, one per collision triangle, kept in file coordinates.
+/// Geometry consumers use these for walkable/obstacle classification, not render normals.
+pub fn parse_collision_normals(md20: &[u8]) -> Result<Vec<[f32; 3]>, String> {
+    let (indices, _) = read_m2_array_header(md20, COLLISION_INDICES_OFFSET)?;
+    let (count, offset) = read_m2_array_header(md20, COLLISION_NORMALS_OFFSET)?;
+    if !indices.is_multiple_of(3) || count != indices / 3 {
+        return Err(format!(
+            "M2 collision has {indices} indices and {count} face normals"
+        ));
+    }
+    validate_array(md20, count, offset, VECTOR_BYTES, "normal")?;
+    (0..count)
+        .map(|index| {
+            let normal = read_vec3(md20, offset + index * VECTOR_BYTES)?;
+            if normal.iter().any(|value| !value.is_finite()) {
+                return Err("M2 collision normal is not finite".into());
+            }
+            Ok(normal)
+        })
+        .collect()
 }
 
 fn valid_bounds(min: [f32; 3], max: [f32; 3]) -> bool {

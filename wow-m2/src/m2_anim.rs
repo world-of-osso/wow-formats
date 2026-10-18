@@ -47,6 +47,7 @@ const SEQ_FLAGS_OFFSET: usize = 0x0C;
 const SEQ_BLEND_TIME_OFFSET: usize = 0x1C;
 const SEQ_BOUNDS_OFFSET: usize = 0x20;
 const SEQ_VARIATION_NEXT_OFFSET: usize = 0x3C;
+const SEQ_ALIAS_NEXT_OFFSET: usize = 0x3E;
 
 #[derive(Clone)]
 pub struct M2Bone {
@@ -714,7 +715,7 @@ pub fn parse_sequence_aliases_at(
     count: usize,
 ) -> Result<Vec<u16>, String> {
     (0..count)
-        .map(|index| read_u16(data, offset + index * SEQ_SIZE + 0x3e))
+        .map(|index| read_u16(data, offset + index * SEQ_SIZE + SEQ_ALIAS_NEXT_OFFSET))
         .collect()
 }
 
@@ -774,10 +775,11 @@ fn first_track_key<T>(
         return Ok(None);
     }
     let header = offset + entry * 8;
-    if read_u32(blob, header)? == 0 {
+    let count = read_u32(blob, header)?;
+    let offset = read_u32(blob, header + 4)? as usize;
+    if count == 0 {
         return Ok(None);
     }
-    let offset = read_u32(blob, header + 4)? as usize;
     let source = if global_sequence >= 0 { blob } else { elements };
     read(source, offset).map(Some)
 }
