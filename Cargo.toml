@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["wow-chunk", "wow-m2", "wow-wmo", "wow-adt"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+
+[workspace.dependencies]
+binrw = "0.15.1"
+glam = "0.32.0"
+wow-chunk = { path = "wow-chunk" }

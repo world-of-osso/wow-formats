@@ -1,0 +1,15 @@
+[package]
+name = "wow-wmo"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["render", "fog", "portals"]
+render = []
+fog = []
+portals = []
+
+[dependencies]
+binrw.workspace = true
+wow-chunk.workspace = true
+glam.workspace = true

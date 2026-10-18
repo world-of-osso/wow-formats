@@ -1,0 +1,198 @@
+{
+  "src/asset/m2_format/m2_anim.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_attach.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_bone_names.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_camera.rs": {
+    "crate": "wow-m2",
+    "tests": 8
+  },
+  "src/asset/m2_format/m2_collision.rs": {
+    "crate": "wow-m2",
+    "tests": 5
+  },
+  "src/asset/m2_format/m2_event.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_light.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_particle.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/m2_ribbon.rs": {
+    "crate": "wow-m2",
+    "tests": 3
+  },
+  "src/asset/m2_format/m2_variation.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/parser.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/m2_format/pure.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/wmo_format/fog.rs": {
+    "crate": "wow-wmo",
+    "tests": 7
+  },
+  "src/asset/wmo_format/mesh_data.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/mod.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/parser.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/parser_chunks.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/parser_tests/ambient_lights.rs": {
+    "crate": "wow-wmo",
+    "tests": 5
+  },
+  "src/asset/wmo_format/parser_tests/group_chunks.rs": {
+    "crate": "wow-wmo",
+    "tests": 13
+  },
+  "src/asset/wmo_format/parser_tests/malformed.rs": {
+    "crate": "wow-wmo",
+    "tests": 9
+  },
+  "src/asset/wmo_format/parser_tests/material_flags.rs": {
+    "crate": "wow-wmo",
+    "tests": 9
+  },
+  "src/asset/wmo_format/parser_tests/materials.rs": {
+    "crate": "wow-wmo",
+    "tests": 12
+  },
+  "src/asset/wmo_format/parser_tests/mod.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/parser_tests/root_chunks.rs": {
+    "crate": "wow-wmo",
+    "tests": 26
+  },
+  "src/asset/wmo_format/parser_types.rs": {
+    "crate": "wow-wmo",
+    "tests": 0
+  },
+  "src/asset/wmo_format/portal.rs": {
+    "crate": "wow-wmo",
+    "tests": 11
+  },
+  "src/asset/adt_format/adt/lod_chunks.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt/parsing.rs": {
+    "crate": "wow-adt",
+    "tests": 2
+  },
+  "src/asset/adt_format/adt.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_geometry.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_obj.rs": {
+    "crate": "wow-adt",
+    "tests": 7
+  },
+  "src/asset/adt_format/adt_tests/blend_mesh.rs": {
+    "crate": "wow-adt",
+    "tests": 8
+  },
+  "src/asset/adt_format/adt_tests/fixtures.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_tests/malformed.rs": {
+    "crate": "wow-adt",
+    "tests": 7
+  },
+  "src/asset/adt_format/adt_tests/mcnk.rs": {
+    "crate": "wow-adt",
+    "tests": 16
+  },
+  "src/asset/adt_format/adt_tests/mod.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_tex.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_tex_tests.rs": {
+    "crate": "wow-adt",
+    "tests": 30
+  },
+  "src/asset/adt_format/adt_tex_water.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/adt_water_geometry.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/mod.rs": {
+    "crate": "wow-adt",
+    "tests": 0
+  },
+  "src/asset/adt_format/tests_lod.rs": {
+    "crate": "wow-adt",
+    "tests": 2
+  },
+  "src/asset/read_bytes.rs": {
+    "crate": "wow-chunk",
+    "tests": 0
+  },
+  "src/asset/wdt.rs": {
+    "crate": "wow-adt",
+    "tests": 8
+  },
+  "src/asset/m2_batch_data.rs": {
+    "crate": "wow-m2",
+    "tests": 2
+  },
+  "src/asset/m2_texture.rs": {
+    "crate": "wow-m2",
+    "tests": 3
+  },
+  "src/asset/m2_texture_composite_data.rs": {
+    "crate": "wow-m2",
+    "tests": 4
+  },
+  "src/asset/m2_particle_defaults.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  },
+  "src/asset/rgba_blit.rs": {
+    "crate": "wow-m2",
+    "tests": 0
+  }
+}

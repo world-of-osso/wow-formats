@@ -1,0 +1,12 @@
+[package]
+name = "wow-adt"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["geometry"]
+geometry = []
+
+[dependencies]
+binrw.workspace = true
+wow-chunk.workspace = true
