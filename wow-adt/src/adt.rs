@@ -2,7 +2,6 @@ use std::io::Cursor;
 
 use super::adt_tex::{AdtWaterData, parse_mh2o};
 use binrw::BinRead;
-use wow_chunk::read_u32;
 
 pub const CHUNK_SIZE: f32 = 100.0 / 3.0;
 pub const UNIT_SIZE: f32 = CHUNK_SIZE / 8.0;

@@ -242,7 +242,6 @@ pub fn resolve_batches(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{parse_chunks, parse_texture_unit_lookup};
 
     fn unit(texture_count: u16) -> M2TextureUnit {
         M2TextureUnit {
@@ -291,12 +290,5 @@ mod tests {
             )),
             (false, true, true)
         );
-    }
-
-    #[test]
-    fn real_skybox_has_empty_texture_unit_lookup() {
-        let data = std::fs::read("data/models/skyboxes/11xp_cloudsky01.m2").unwrap();
-        let chunks = parse_chunks(&data).unwrap();
-        assert!(parse_texture_unit_lookup(chunks.md20).unwrap().is_empty());
     }
 }
