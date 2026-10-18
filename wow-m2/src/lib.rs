@@ -5,7 +5,7 @@
 #[cfg(feature = "animation")]
 #[path = "m2_anim.rs"]
 pub mod m2_anim;
-#[cfg(feature = "animation")]
+#[cfg(feature = "attachments")]
 #[path = "m2_attach.rs"]
 pub mod m2_attach;
 #[cfg(feature = "animation")]

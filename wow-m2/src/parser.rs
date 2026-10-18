@@ -32,6 +32,9 @@ pub struct M2Submesh {
     pub vertex_start: u16,
     pub vertex_count: u16,
     pub triangle_start: u32,
+    /// Authored indexStart including the section level's high 16 bits.
+    /// Independent of the client's cumulative triangle_start convention.
+    pub raw_triangle_start: u32,
     pub triangle_count: u16,
 }
 
@@ -39,10 +42,10 @@ pub struct M2Submesh {
 #[br(little)]
 struct RawM2Submesh {
     mesh_part_id: u16,
-    _level: u16,
+    level: u16,
     vertex_start: u16,
     vertex_count: u16,
-    _triangle_start: u16,
+    triangle_start: u16,
     triangle_count: u16,
     _bone_count: u16,
     _bone_combo_index: u16,
@@ -55,13 +58,13 @@ struct RawM2Submesh {
 
 #[derive(BinRead)]
 #[br(little)]
-#[cfg(feature = "textures")]
+#[cfg(feature = "materials")]
 pub struct M2Material {
     pub flags: u16,
     pub blend_mode: u16,
 }
 
-#[cfg(feature = "textures")]
+#[cfg(feature = "materials")]
 pub struct M2TextureUnit {
     pub flags: u8,
     pub priority_plane: i8,
@@ -79,7 +82,7 @@ pub struct M2TextureUnit {
 
 #[derive(BinRead)]
 #[br(little)]
-#[cfg(feature = "textures")]
+#[cfg(feature = "materials")]
 struct RawM2TextureUnit {
     flags: u8,
     priority_plane: i8,
@@ -126,7 +129,7 @@ pub struct SkinData {
     pub lookup: Vec<u16>,
     pub indices: Vec<u16>,
     pub submeshes: Vec<M2Submesh>,
-    #[cfg(feature = "textures")]
+    #[cfg(feature = "materials")]
     pub batches: Vec<M2TextureUnit>,
 }
 
@@ -258,7 +261,7 @@ pub fn parse_skin_full(data: &[u8]) -> Result<SkinData, String> {
         header.submesh_offset as usize,
         header.submesh_count as usize,
     )?;
-    #[cfg(feature = "textures")]
+    #[cfg(feature = "materials")]
     let batches = parse_texture_units(
         data,
         header._batch_offset as usize,
@@ -268,7 +271,7 @@ pub fn parse_skin_full(data: &[u8]) -> Result<SkinData, String> {
         lookup,
         indices,
         submeshes,
-        #[cfg(feature = "textures")]
+        #[cfg(feature = "materials")]
         batches,
     })
 }
@@ -287,6 +290,8 @@ fn parse_submeshes(data: &[u8], offset: usize, count: usize) -> Result<Vec<M2Sub
             vertex_start: submesh.vertex_start,
             vertex_count: submesh.vertex_count,
             triangle_start: cumulative_index,
+            raw_triangle_start: u32::from(submesh.triangle_start)
+                | (u32::from(submesh.level) << 16),
             triangle_count: submesh.triangle_count,
         });
         cumulative_index += submesh.triangle_count as u32;
@@ -294,7 +299,7 @@ fn parse_submeshes(data: &[u8], offset: usize, count: usize) -> Result<Vec<M2Sub
     Ok(subs)
 }
 
-#[cfg(feature = "textures")]
+#[cfg(feature = "materials")]
 fn parse_texture_units(
     data: &[u8],
     offset: usize,
@@ -346,7 +351,7 @@ pub fn parse_texture_flags(md20: &[u8]) -> Result<Vec<u32>, String> {
     .collect())
 }
 
-#[cfg(feature = "textures")]
+#[cfg(feature = "materials")]
 pub fn parse_materials(md20: &[u8]) -> Result<Vec<M2Material>, String> {
     read_m2_array(md20, super::MD20_MATERIALS_COUNT_OFFSET, "material")
 }

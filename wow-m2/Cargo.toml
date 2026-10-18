@@ -5,14 +5,20 @@ edition.workspace = true
 
 [features]
 default = ["render"]
-render = ["animation", "particles", "ribbons", "lights", "cameras", "events", "textures"]
+render = ["animation", "attachments", "materials", "particles", "ribbons", "lights", "cameras", "events", "textures"]
 animation = []
+attachments = []
+materials = []
 particles = ["animation"]
 ribbons = ["animation"]
 lights = ["animation"]
 cameras = []
 events = ["animation"]
-textures = ["animation"]
+textures = ["animation", "materials"]
+
+[[test]]
+name = "geometry_metadata"
+required-features = ["materials", "attachments"]
 
 [dependencies]
 binrw.workspace = true

@@ -533,7 +533,7 @@ pub fn unpack_rotation(packed: &[i16; 4]) -> [f32; 4] {
     [x, z, -y, w]
 }
 
-fn unpack_quat_component(raw: i16) -> f32 {
+pub fn unpack_quat_component(raw: i16) -> f32 {
     if raw < 0 {
         (raw as f32 + 32768.0) / FIXED16_SCALE
     } else {
@@ -705,4 +705,79 @@ pub fn global_track_time<T>(
         (global_ms % duration) as u32
     };
     Some((0, time))
+}
+
+/// Alias targets from the sequence records, distinct from variation_next links.
+pub fn parse_sequence_aliases_at(
+    data: &[u8],
+    offset: usize,
+    count: usize,
+) -> Result<Vec<u16>, String> {
+    (0..count)
+        .map(|index| read_u16(data, offset + index * SEQ_SIZE + 0x3e))
+        .collect()
+}
+
+/// First authored bone keys for geometry posing, without sampling or timestamp interpolation.
+/// Keys of external sequences can live in a separate AFM2/AFSB payload; global keys stay in blob.
+pub struct BoneFirstKeys {
+    pub translation: Option<[f32; 3]>,
+    pub rotation: Option<[i16; 4]>,
+    pub scale: Option<[f32; 3]>,
+}
+
+pub fn first_bone_transform(
+    blob: &[u8],
+    bones_offset: usize,
+    bone: usize,
+    sequence: usize,
+    elements: &[u8],
+) -> Result<BoneFirstKeys, String> {
+    let base = bones_offset + bone * BONE_SIZE;
+    Ok(BoneFirstKeys {
+        translation: first_track_key(
+            blob,
+            base + BONE_TRANSLATION_BLOCK_OFFSET,
+            sequence,
+            elements,
+            read_vec3,
+        )?,
+        rotation: first_track_key(
+            blob,
+            base + BONE_ROTATION_BLOCK_OFFSET,
+            sequence,
+            elements,
+            read_quat_i16,
+        )?,
+        scale: first_track_key(
+            blob,
+            base + BONE_SCALE_BLOCK_OFFSET,
+            sequence,
+            elements,
+            read_vec3,
+        )?,
+    })
+}
+
+fn first_track_key<T>(
+    blob: &[u8],
+    track: usize,
+    sequence: usize,
+    elements: &[u8],
+    read: impl Fn(&[u8], usize) -> Result<T, String>,
+) -> Result<Option<T>, String> {
+    let global_sequence = read_i16(blob, track + 2)?;
+    let count = read_u32(blob, track + 12)? as usize;
+    let offset = read_u32(blob, track + 16)? as usize;
+    let entry = if global_sequence >= 0 { 0 } else { sequence };
+    if entry >= count {
+        return Ok(None);
+    }
+    let header = offset + entry * 8;
+    if read_u32(blob, header)? == 0 {
+        return Ok(None);
+    }
+    let offset = read_u32(blob, header + 4)? as usize;
+    let source = if global_sequence >= 0 { blob } else { elements };
+    read(source, offset).map(Some)
 }

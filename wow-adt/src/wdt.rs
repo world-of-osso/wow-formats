@@ -156,22 +156,48 @@ pub fn parse_wdt_tiles(data: &[u8]) -> Result<WdtTiles, String> {
         tiles.active.insert(tile);
         if let (Some(payload), Some(ids)) = (maid, tiles.maid.as_mut()) {
             let offset = index * 32;
-            ids.insert(
-                tile,
-                TileFileIds {
-                    root: read_u32(payload, offset)?,
-                    obj0: read_u32(payload, offset + 4)?,
-                    obj1: read_u32(payload, offset + 8)?,
-                    tex0: read_u32(payload, offset + 12)?,
-                    lod: read_u32(payload, offset + 16)?,
-                    map_texture: read_u32(payload, offset + 20)?,
-                    map_normal: read_u32(payload, offset + 24)?,
-                    minimap: read_u32(payload, offset + 28)?,
-                },
-            );
+            ids.insert(tile, parse_maid_entry(payload, offset)?);
         }
     }
     Ok(tiles)
+}
+
+/// Every authored MAID slot, including slots MAIN does not mark active.
+/// Geometry-bake selection and the client's active-tile view are separate policies.
+pub fn parse_wdt_maid_file_ids(data: &[u8]) -> Result<Option<Vec<TileFileIds>>, String> {
+    let mut maid = None;
+    for chunk in ChunkIter::new(data) {
+        let (tag, payload) = chunk?;
+        if tag == b"DIAM" {
+            maid = Some(payload);
+        }
+    }
+    let Some(payload) = maid else {
+        return Ok(None);
+    };
+    if payload.len() != 4096 * 32 {
+        return Err(format!(
+            "WDT MAID has {} bytes, expected 131072",
+            payload.len()
+        ));
+    }
+    (0..4096)
+        .map(|index| parse_maid_entry(payload, index * 32))
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
+fn parse_maid_entry(payload: &[u8], offset: usize) -> Result<TileFileIds, String> {
+    Ok(TileFileIds {
+        root: read_u32(payload, offset)?,
+        obj0: read_u32(payload, offset + 4)?,
+        obj1: read_u32(payload, offset + 8)?,
+        tex0: read_u32(payload, offset + 12)?,
+        lod: read_u32(payload, offset + 16)?,
+        map_texture: read_u32(payload, offset + 20)?,
+        map_normal: read_u32(payload, offset + 24)?,
+        minimap: read_u32(payload, offset + 28)?,
+    })
 }
 
 #[cfg(test)]

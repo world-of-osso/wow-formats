@@ -12,20 +12,25 @@
 //!   0x08: position [f32; 3] — offset relative to bone, WoW coordinates
 //!   0x14: activation byte AnimBlock (20 bytes)
 
+#[cfg(feature = "animation")]
+use super::read_f32;
 use super::{
-    MD20_ATTACHMENT_LOOKUP_COUNT_OFFSET, MD20_ATTACHMENTS_COUNT_OFFSET, read_f32, read_u16,
-    read_u32,
+    MD20_ATTACHMENT_LOOKUP_COUNT_OFFSET, MD20_ATTACHMENTS_COUNT_OFFSET, read_u16, read_u32,
 };
 use wow_chunk::read_m2_array_header;
 
 const ATTACHMENT_ENTRY_SIZE: usize = 40;
+#[cfg(feature = "animation")]
 const ATTACHMENT_ACTIVATION_OFFSET: usize = 20;
+#[cfg(feature = "animation")]
 const ATTACHMENT_ID_OFFSET: usize = 0;
+#[cfg(feature = "animation")]
 const ATTACHMENT_BONE_OFFSET: usize = 4;
 const ATTACHMENT_POSITION_OFFSET: usize = 8;
 const ATTACHMENT_LOOKUP_ENTRY_SIZE: usize = 2;
 
 /// An attachment point on an M2 model (e.g., hand, back, shoulder).
+#[cfg(feature = "animation")]
 #[derive(Debug, Clone)]
 pub struct M2Attachment {
     /// Attachment lookup ID (0=LeftWrist, 1=RightPalm, 2=LeftPalm, etc.).
@@ -38,6 +43,7 @@ pub struct M2Attachment {
     pub activation: super::m2_anim::AnimTrack<u8>,
 }
 
+#[cfg(feature = "animation")]
 impl M2Attachment {
     pub fn active_at(
         &self,
@@ -54,6 +60,7 @@ impl M2Attachment {
 }
 
 /// Parse M2Attachment entries from MD20 offset 0xF0.
+#[cfg(feature = "animation")]
 pub fn parse_attachments(md20: &[u8]) -> Result<Vec<M2Attachment>, String> {
     let (count, offset) = read_m2_array_header(md20, MD20_ATTACHMENTS_COUNT_OFFSET)?;
     let mut attachments = Vec::with_capacity(count);
@@ -76,6 +83,7 @@ pub fn parse_attachments(md20: &[u8]) -> Result<Vec<M2Attachment>, String> {
     Ok(attachments)
 }
 
+#[cfg(feature = "animation")]
 pub fn parse_ska1_attachments(ska1: &[u8]) -> Result<Vec<M2Attachment>, String> {
     if ska1.len() < 16 {
         return Ok(Vec::new());
@@ -133,6 +141,28 @@ pub fn parse_ska1_attachment_lookup(ska1: &[u8]) -> Result<Vec<i16>, String> {
     Ok(lookup)
 }
 
-#[cfg(test)]
+/// A static attachment offset selected through the MD20 attachment lookup.
+/// Does not read activation tracks, which cannot affect the authored seat position.
+pub fn attachment_position(md20: &[u8], attachment: u32) -> Result<[f32; 3], String> {
+    let (count, lookup) = read_m2_array_header(md20, MD20_ATTACHMENT_LOOKUP_COUNT_OFFSET)?;
+    if attachment as usize >= count {
+        return Err("M2 seat attachment not in lookup".into());
+    }
+    let index = wow_chunk::read_i16(
+        md20,
+        lookup + attachment as usize * ATTACHMENT_LOOKUP_ENTRY_SIZE,
+    )?;
+    let index = usize::try_from(index).map_err(|_| "M2 seat attachment absent")?;
+    let (count, offset) = read_m2_array_header(md20, MD20_ATTACHMENTS_COUNT_OFFSET)?;
+    if index >= count {
+        return Err("M2 attachment index out of range".into());
+    }
+    wow_chunk::read_vec3(
+        md20,
+        offset + index * ATTACHMENT_ENTRY_SIZE + ATTACHMENT_POSITION_OFFSET,
+    )
+}
+
+#[cfg(all(test, feature = "animation"))]
 #[path = "../tests/unit/m2_attach_tests.rs"]
 mod tests;
