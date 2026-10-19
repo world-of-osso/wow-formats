@@ -267,6 +267,33 @@ struct McnkHeader {
     pos_z: f32,
 }
 
+/// MCNK height header in authored file-axis order, without subchunk selection policy.
+pub struct TerrainHeightHeader {
+    pub origin: [f32; 3],
+    pub area_id: u32,
+    pub holes_low_res: u16,
+    pub holes_high_res: Option<u64>,
+}
+
+/// Decode only the fixed MCNK header; callers select and validate MCVT separately.
+pub fn parse_terrain_height_header(payload: &[u8]) -> Result<TerrainHeightHeader, String> {
+    if payload.len() < 128 {
+        return Err(format!("MCNK too small: {} bytes", payload.len()));
+    }
+    let header = McnkHeader::read_le(&mut Cursor::new(payload))
+        .map_err(|error| format!("MCNK header: {error}"))?;
+    Ok(TerrainHeightHeader {
+        origin: [header.pos_y, header.pos_x, header.pos_z],
+        area_id: header._area_id,
+        holes_low_res: header._holes_low_res,
+        holes_high_res: (header.flags & MCNK_FLAG_HIGH_RES_HOLES != 0)
+            .then_some(header._holes_high_res),
+    })
+}
+
+/// Decode the 145 authored MCVT height floats without selecting subchunks.
+pub use parsing::parse_mcvt;
+
 /// Height/hole metadata without optional rendering chunks, in authored file-axis order.
 pub struct TerrainHeightChunk {
     pub origin: [f32; 3],
@@ -289,11 +316,7 @@ pub fn parse_terrain_height_chunks(data: &[u8]) -> Result<Vec<TerrainHeightChunk
 
 fn parse_terrain_height_chunk(payload: &[u8]) -> Result<TerrainHeightChunk, String> {
     const HEADER_BYTES: usize = 128;
-    if payload.len() < HEADER_BYTES {
-        return Err(format!("MCNK too small: {} bytes", payload.len()));
-    }
-    let header = McnkHeader::read_le(&mut Cursor::new(payload))
-        .map_err(|error| format!("MCNK header: {error}"))?;
+    let header = parse_terrain_height_header(payload)?;
     let mut heights = None;
     for chunk in ChunkIter::new(&payload[HEADER_BYTES..]) {
         let (tag, data) = chunk?;
@@ -303,11 +326,10 @@ fn parse_terrain_height_chunk(payload: &[u8]) -> Result<TerrainHeightChunk, Stri
         }
     }
     Ok(TerrainHeightChunk {
-        origin: [header.pos_y, header.pos_x, header.pos_z],
+        origin: header.origin,
         heights: heights.ok_or("MCNK has no MCVT")?,
-        holes_low_res: header._holes_low_res,
-        holes_high_res: (header.flags & MCNK_FLAG_HIGH_RES_HOLES != 0)
-            .then_some(header._holes_high_res),
+        holes_low_res: header.holes_low_res,
+        holes_high_res: header.holes_high_res,
     })
 }
 
