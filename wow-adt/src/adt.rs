@@ -113,6 +113,9 @@ pub struct FlightBounds {
     pub max_heights: [i16; 9],
 }
 
+/// Raw lower MFBO grid; root selection, plane interpolation and defaults stay with callers.
+pub use parsing::parse_mfbo_min_heights;
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct LodHeader {
     pub flags: u32,

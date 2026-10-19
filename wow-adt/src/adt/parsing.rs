@@ -3,7 +3,7 @@ use std::mem::size_of;
 
 use super::*;
 use binrw::BinRead;
-use wow_chunk::{read_f32, read_i8, read_u32};
+use wow_chunk::{read_f32, read_i8, read_u16, read_u32};
 
 pub fn parse_mcvt(payload: &[u8]) -> Result<[f32; MCVT_COUNT], String> {
     if payload.len() < MCVT_COUNT * 4 {
@@ -303,6 +303,19 @@ pub(super) fn parse_blend_mesh_data(
     }))
 }
 
+/// The nine lower MFBO corners, without a whole-record precheck or upper-plane policy.
+pub fn parse_mfbo_min_heights(payload: &[u8]) -> Result<[i16; 9], String> {
+    parse_mfbo_grid(payload, 9 * size_of::<i16>())
+}
+
+fn parse_mfbo_grid(payload: &[u8], offset: usize) -> Result<[i16; 9], String> {
+    let mut heights = [0; 9];
+    for (index, height) in heights.iter_mut().enumerate() {
+        *height = read_u16(payload, offset + index * size_of::<i16>())? as i16;
+    }
+    Ok(heights)
+}
+
 pub(super) fn parse_mfbo(payload: &[u8]) -> Result<FlightBounds, String> {
     const MFBO_ENTRIES: usize = 18;
     const MFBO_BYTES: usize = MFBO_ENTRIES * size_of::<i16>();
@@ -315,17 +328,9 @@ pub(super) fn parse_mfbo(payload: &[u8]) -> Result<FlightBounds, String> {
         ));
     }
 
-    let mut values = [0i16; MFBO_ENTRIES];
-    for (index, value) in values.iter_mut().enumerate() {
-        let base = index * size_of::<i16>();
-        *value = i16::from_le_bytes(payload[base..base + size_of::<i16>()].try_into().unwrap());
-    }
-
-    let mut min_heights = [0i16; 9];
-    let mut max_heights = [0i16; 9];
     // MFBO stores the upper plane first, then the lower plane (Noggit MapTile.cpp).
-    max_heights.copy_from_slice(&values[..9]);
-    min_heights.copy_from_slice(&values[9..]);
+    let max_heights = parse_mfbo_grid(payload, 0)?;
+    let min_heights = parse_mfbo_min_heights(payload)?;
     Ok(FlightBounds {
         min_heights,
         max_heights,
