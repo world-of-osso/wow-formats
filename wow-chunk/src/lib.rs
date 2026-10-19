@@ -38,3 +38,22 @@ impl<'a> Iterator for ChunkIter<'a> {
         Some(Ok((tag, &self.data[payload_start..payload_end])))
     }
 }
+
+/// First ADT/WDT/WMO chunk with the documented forward tag (stored reversed).
+/// Only visited chunks are validated; a selected chunk does not validate its tail.
+pub fn find_reversed_chunk<'a>(data: &'a [u8], tag: &[u8; 4]) -> Result<Option<&'a [u8]>, String> {
+    let stored_tag = [tag[3], tag[2], tag[1], tag[0]];
+    let mut offset = 0;
+    for chunk in ChunkIter::new(data) {
+        let (found, payload) = chunk.map_err(|_| {
+            let stored = &data[offset..offset + 4];
+            let name = [stored[3], stored[2], stored[1], stored[0]];
+            format!("{} chunk truncated", String::from_utf8_lossy(&name))
+        })?;
+        if found == &stored_tag {
+            return Ok(Some(payload));
+        }
+        offset += 8 + payload.len();
+    }
+    Ok(None)
+}

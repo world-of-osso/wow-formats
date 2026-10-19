@@ -47,6 +47,17 @@ where
     T::read_le(&mut Cursor::new(slice)).map_err(|err| format!("{label} parse failed: {err}"))
 }
 
+/// The mandatory GFID entries named by the MOHD group count, without unrelated
+/// render-chunk validation. A runtime geometry loader may require GFID even for zero groups.
+pub fn parse_root_group_file_ids(data: &[u8]) -> Result<Vec<u32>, String> {
+    let mohd = wow_chunk::find_reversed_chunk(data, b"MOHD")?.ok_or("WMO root has no MOHD")?;
+    let count = wow_chunk::read_u32(mohd, 4)? as usize;
+    let gfid = wow_chunk::find_reversed_chunk(data, b"GFID")?.ok_or("WMO root has no GFID")?;
+    (0..count)
+        .map(|index| wow_chunk::read_u32(gfid, index * 4))
+        .collect()
+}
+
 pub fn load_wmo_root(data: &[u8]) -> Result<WmoRootData, String> {
     parser_chunks::load_wmo_root(data)
 }

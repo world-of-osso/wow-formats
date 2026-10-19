@@ -9,7 +9,7 @@ use super::adt::ChunkIter;
 use super::adt_obj::{WmoPlacement, parse_modf};
 
 /// wowdev WDT: `wdt_uses_global_map_obj`, the map is the one WMO its MODF places.
-const MPHD_FLAG_GLOBAL_WMO: u32 = 0x1;
+pub const MPHD_FLAG_GLOBAL_WMO: u32 = 0x1;
 
 /// wowdev WDT: `adt_has_big_alpha`, "shader = 2".
 const MPHD_FLAG_BIG_ALPHA: u32 = 0x4;
@@ -33,13 +33,18 @@ impl MphdFlags {
     }
 }
 
+/// Flags in one selected MPHD payload; chunk selection and missing-chunk policy are separate.
+pub fn parse_mphd_flags(payload: &[u8]) -> Result<MphdFlags, String> {
+    Ok(MphdFlags {
+        raw: read_u32(payload, 0)?,
+    })
+}
+
 pub fn parse_wdt_mphd_flags(data: &[u8]) -> Result<MphdFlags, String> {
     for chunk in ChunkIter::new(data) {
         let (tag, payload) = chunk?;
         if tag == b"DHPM" {
-            return Ok(MphdFlags {
-                raw: read_u32(payload, 0)?,
-            });
+            return parse_mphd_flags(payload);
         }
     }
     Err("WDT missing MPHD chunk".to_string())
@@ -187,10 +192,25 @@ pub fn parse_wdt_maid_file_ids(data: &[u8]) -> Result<Option<Vec<TileFileIds>>, 
         .map(Some)
 }
 
+/// Runtime geometry's two selected FileDataIDs per MAID slot, in authored order.
+/// Unused companion fields and trailing bytes are not prerequisites for this view.
+pub fn parse_maid_root_obj0(payload: &[u8]) -> Result<Vec<(u32, u32)>, String> {
+    const TILE_COUNT: usize = 64 * 64;
+    const ENTRY_BYTES: usize = 32;
+    (0..TILE_COUNT)
+        .map(|index| parse_maid_root_obj0_at(payload, index * ENTRY_BYTES))
+        .collect()
+}
+
+fn parse_maid_root_obj0_at(payload: &[u8], offset: usize) -> Result<(u32, u32), String> {
+    Ok((read_u32(payload, offset)?, read_u32(payload, offset + 4)?))
+}
+
 fn parse_maid_entry(payload: &[u8], offset: usize) -> Result<TileFileIds, String> {
+    let (root, obj0) = parse_maid_root_obj0_at(payload, offset)?;
     Ok(TileFileIds {
-        root: read_u32(payload, offset)?,
-        obj0: read_u32(payload, offset + 4)?,
+        root,
+        obj0,
         obj1: read_u32(payload, offset + 8)?,
         tex0: read_u32(payload, offset + 12)?,
         lod: read_u32(payload, offset + 16)?,

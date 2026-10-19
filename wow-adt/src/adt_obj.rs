@@ -295,8 +295,41 @@ fn parse_mddf(
         .collect()
 }
 
-const MODF_FLAG_HAS_SCALE: u16 = 0x4;
-const MODF_FLAG_FILEDATAID: u16 = 0x8;
+pub const MODF_ENTRY_SIZE: usize = size_of::<ModfEntry>();
+pub const MODF_FLAG_HAS_SCALE: u16 = 0x4;
+pub const MODF_FLAG_FILEDATAID: u16 = 0x8;
+const MODF_FLAGS_OFFSET: usize = 56;
+const MODF_SCALE_OFFSET: usize = 62;
+
+/// Geometry fields shared by runtime placement policies; name_id remains uninterpreted.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ModfTransform {
+    pub name_id: u32,
+    pub position: [f32; 3],
+    pub rotation: [f32; 3],
+    pub scale: f32,
+}
+
+/// Read flags before a consumer decides whether named/path placements are supported.
+pub fn modf_flags(entry: &[u8]) -> Result<u16, String> {
+    wow_chunk::read_u16(entry, MODF_FLAGS_OFFSET)
+}
+
+/// Project only placement geometry; unused MODF bounds and sets are not validated.
+pub fn parse_modf_transform(entry: &[u8]) -> Result<ModfTransform, String> {
+    let flags = modf_flags(entry)?;
+    let scale = if flags & MODF_FLAG_HAS_SCALE != 0 {
+        f32::from(wow_chunk::read_u16(entry, MODF_SCALE_OFFSET)?) / 1024.0
+    } else {
+        1.0
+    };
+    Ok(ModfTransform {
+        name_id: wow_chunk::read_u32(entry, 0)?,
+        position: wow_chunk::read_vec3(entry, 8)?,
+        rotation: wow_chunk::read_vec3(entry, 20)?,
+        scale,
+    })
+}
 
 fn parse_modf_entry(
     data: &[u8],

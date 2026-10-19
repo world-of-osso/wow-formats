@@ -20,6 +20,8 @@ wow-m2 = { git = "https://github.com/world-of-osso/wow-formats.git", rev = "<com
 
 The `m2_anim`, `m2_collision`, and other format namespaces retain their names. `wow_adt::{adt, adt_tex, adt_obj, wdt}` and `wow_wmo::parser` retain the original namespaces. Client model assembly, coordinate adapters and simulation policies are not part of these crates.
 
+Runtime ground loaders can project only the fields they use: `wow_chunk::find_reversed_chunk` selects the first documented-tag chunk and validates only visited chunks; `wow_adt::wdt::parse_mphd_flags` and `parse_maid_root_obj0` read selected WDT fields; `wow_adt::adt_obj::{modf_flags,parse_modf_transform}` leave name/FDID refusal policy to the caller; `wow_wmo::parser::parse_root_group_file_ids` requires exactly the MOHD-named GFID entries without validating unrelated render chunks. These views do not make unused MAID companions, MODF bounds/sets or a full MOHD header prerequisites for runtime geometry.
+
 ## Provenance and scope
 
 Clean-room extraction of the project's existing independently authored Rust parsers and synthetic tests. No decompiled or leaked Blizzard client source was opened, searched, reconstructed, or included during this extraction. Existing comments identify public format documentation (wowdev.wiki) and independently maintained open-source readers used by the original implementation. This extraction changes module paths, crate-boundary visibility and Cargo feature boundaries, not decoding behavior or malformed-input policy.
