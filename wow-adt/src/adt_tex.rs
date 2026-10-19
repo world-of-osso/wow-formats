@@ -10,11 +10,13 @@ use wow_chunk::read_u32;
 use super::adt::ChunkIter;
 #[path = "adt_tex_water.rs"]
 mod adt_tex_water;
-pub use adt_tex_water::{
-    AdtWaterData, ChunkWater, FIRST_LIQUID_OBJECT, WaterAttributes, WaterLayer, parse_mh2o,
-};
 #[cfg(test)]
-use adt_tex_water::{LiquidInstanceHeader, Mh2oAttributes, Mh2oChunkHeader};
+use adt_tex_water::Mh2oAttributes;
+pub use adt_tex_water::{
+    AdtWaterData, ChunkWater, FIRST_LIQUID_OBJECT, LiquidInstanceHeader, Mh2oChunkHeader,
+    WaterAttributes, WaterLayer, parse_mh2o, parse_water_attributes, read_liquid_instance_header,
+    read_mh2o_chunk_header,
+};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct MclyFlags {

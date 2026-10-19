@@ -5,27 +5,29 @@ use wow_chunk::read_f32;
 
 use super::parse_binrw_value;
 
+/// The 24 authored MH2O instance bytes; offsets and layout interpretation stay raw.
 #[derive(BinRead)]
 #[br(little)]
-pub(super) struct LiquidInstanceHeader {
-    liquid_type: u16,
-    liquid_object: u16,
-    min_height: f32,
-    max_height: f32,
-    x_offset: u8,
-    y_offset: u8,
-    width: u8,
-    height: u8,
-    exists_offset: u32,
-    vertex_offset: u32,
+pub struct LiquidInstanceHeader {
+    pub liquid_type: u16,
+    pub liquid_object: u16,
+    pub min_height: f32,
+    pub max_height: f32,
+    pub x_offset: u8,
+    pub y_offset: u8,
+    pub width: u8,
+    pub height: u8,
+    pub exists_offset: u32,
+    pub vertex_offset: u32,
 }
 
+/// One 12-byte MH2O directory entry, without validating referenced byte ranges.
 #[derive(BinRead)]
 #[br(little)]
-pub(super) struct Mh2oChunkHeader {
-    instance_offset: u32,
-    layer_count: u32,
-    attributes_offset: u32,
+pub struct Mh2oChunkHeader {
+    pub instance_offset: u32,
+    pub layer_count: u32,
+    pub attributes_offset: u32,
 }
 
 #[derive(BinRead)]
@@ -234,7 +236,8 @@ fn parse_liquid_instance(payload: &[u8], off: usize) -> Result<WaterLayer, Strin
     Ok(build_water_layer(header, exists, vertex_data))
 }
 
-fn read_liquid_instance_header(
+/// Read one instance descriptor at its byte offset, without resolving its vertex format.
+pub fn read_liquid_instance_header(
     payload: &[u8],
     offset: usize,
 ) -> Result<LiquidInstanceHeader, String> {
@@ -305,7 +308,8 @@ fn build_water_layer(
     }
 }
 
-fn parse_water_attributes(payload: &[u8], offset: usize) -> Result<WaterAttributes, String> {
+/// Read the 16 authored fishable/deep attribute bytes at a byte offset.
+pub fn parse_water_attributes(payload: &[u8], offset: usize) -> Result<WaterAttributes, String> {
     let attributes: Mh2oAttributes = parse_binrw_value(payload, offset, "MH2O attributes")?;
     Ok(WaterAttributes {
         fishable: attributes.fishable,
@@ -347,7 +351,11 @@ fn parse_mh2o_chunk(payload: &[u8], chunk_index: usize) -> Result<ChunkWater, St
     Ok(ChunkWater { layers, attributes })
 }
 
-fn read_mh2o_chunk_header(payload: &[u8], chunk_index: usize) -> Result<Mh2oChunkHeader, String> {
+/// Read a directory entry by chunk index; no complete 256-entry directory is required.
+pub fn read_mh2o_chunk_header(
+    payload: &[u8],
+    chunk_index: usize,
+) -> Result<Mh2oChunkHeader, String> {
     let base = chunk_index * size_of::<Mh2oChunkHeader>();
     parse_binrw_value(payload, base, "MH2O chunk header")
 }
