@@ -8,7 +8,7 @@ Engine-independent World of Warcraft binary readers extracted from `world-of-oss
 | `wow-m2` | MD20/MD21 model chunks, `.skin`, collision geometry, file references | `animation`, `attachments`, `materials`, `particles`, `ribbons`, `lights`, `cameras`, `events`, `textures`; `render` enables all |
 | `wow-wmo` | WMO root/group chunks and FDID references | `render` (batch geometry), `fog`, `portals` |
 | `wow-adt` | ADT root, `_tex0`, `_obj`, LOD, water and WDT metadata | `geometry` (terrain/water mesh helpers) |
-| `wow-formats-dump` | CLI printing one JSON line of a projection for non-Rust tools: `adt-height <root.adt>` (every MCNK's index/origin/area/holes and every MCVT, with framing problems as data) | None |
+| `wow-formats-dump` | CLI printing one JSON line of a projection for non-Rust tools: `adt-height <root.adt>` (file length, every MCNK's index/origin/area/holes and every MCVT, with framing problems as data) | None |
 
 Install the CLI at a pinned revision with `cargo install --locked --git https://github.com/world-of-osso/wow-formats.git --rev <commit> wow-formats-dump --root <dir>`. Callers keep selection, validation and error policy. Floats are exact f32 values widened to f64; non-finite values use Python's `NaN`/`Infinity` JSON tokens.
 

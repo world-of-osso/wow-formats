@@ -80,7 +80,8 @@ fn adt_height_json(data: &[u8]) -> Result<String, String> {
         .map(|(offset, _, payload)| mcnk_json(*offset, payload))
         .collect::<Result<Vec<_>, _>>()?;
     Ok(format!(
-        r#"{{"mcnk":[{}],{}}}"#,
+        r#"{{"bytes":{},"mcnk":[{}],{}}}"#,
+        data.len(),
         mcnks.join(","),
         frame_status_json(&frames)
     ))

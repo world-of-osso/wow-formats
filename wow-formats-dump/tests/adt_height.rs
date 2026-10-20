@@ -57,13 +57,14 @@ fn projects_mcnk_header_and_every_mcvt_with_exact_widened_floats() {
     data.extend(mcnk((3, 7), [-0.0, 1.5, 0.1], &sub));
     let expected = format!(
         concat!(
-            r#"{{"mcnk":[{{"offset":12,"bytes":{},"index":[3,7],"origin":[-0.0,1.5,0.10000000149011612],"#,
+            r#"{{"bytes":{},"mcnk":[{{"offset":12,"bytes":{},"index":[3,7],"origin":[-0.0,1.5,0.10000000149011612],"#,
             r#""area_id":5,"holes_low_res":33,"holes_high_res":9223372036854775809,"#,
             r#""mcvt":[{{"offset":11,"bytes":580,"heights":[0.10000000149011612,{}]}},"#,
             r#"{{"offset":599,"bytes":579,"heights":null}}],"truncated":null,"tail":0}}],"#,
             r#""truncated":null,"tail":0}}"#,
             "\n"
         ),
+        data.len(),
         128 + sub.len(),
         rest_of_heights()
     );
@@ -92,7 +93,10 @@ fn framing_problems_are_reported_in_file_order_not_fatal() {
     let good_offset = short.len();
     let truncated_offset = good_offset + good.len();
     assert!(
-        json.starts_with(r#"{"mcnk":[{"offset":0,"bytes":127},"#),
+        json.starts_with(&format!(
+            r#"{{"bytes":{},"mcnk":[{{"offset":0,"bytes":127}},"#,
+            data.len()
+        )),
         "{json}"
     );
     assert!(
