@@ -3,6 +3,8 @@ use wow_adt::adt::{parse_mcvt, parse_terrain_height_header};
 fn header() -> Vec<u8> {
     let mut data = vec![0; 128];
     data[..4].copy_from_slice(&0x41u32.to_le_bytes());
+    data[4..8].copy_from_slice(&9u32.to_le_bytes());
+    data[8..12].copy_from_slice(&14u32.to_le_bytes());
     data[0x34..0x38].copy_from_slice(&77u32.to_le_bytes());
     data[0x3c..0x3e].copy_from_slice(&0x20u16.to_le_bytes());
     for (offset, bits) in [
@@ -26,6 +28,7 @@ fn header_projects_raw_origin_area_and_low_holes_without_render_payloads() {
             18.5f32.to_bits()
         ]
     );
+    assert_eq!((parsed.index_x, parsed.index_y), (9, 14));
     assert_eq!(parsed.area_id, 77);
     assert_eq!(parsed.holes_low_res, 0x20);
     assert_eq!(parsed.holes_high_res, None);

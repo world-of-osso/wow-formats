@@ -272,6 +272,8 @@ struct McnkHeader {
 
 /// MCNK height header in authored file-axis order, without subchunk selection policy.
 pub struct TerrainHeightHeader {
+    pub index_x: u32,
+    pub index_y: u32,
     pub origin: [f32; 3],
     pub area_id: u32,
     pub holes_low_res: u16,
@@ -286,6 +288,8 @@ pub fn parse_terrain_height_header(payload: &[u8]) -> Result<TerrainHeightHeader
     let header = McnkHeader::read_le(&mut Cursor::new(payload))
         .map_err(|error| format!("MCNK header: {error}"))?;
     Ok(TerrainHeightHeader {
+        index_x: header.index_x,
+        index_y: header.index_y,
         origin: [header.pos_y, header.pos_x, header.pos_z],
         area_id: header._area_id,
         holes_low_res: header._holes_low_res,
