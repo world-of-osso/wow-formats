@@ -104,6 +104,14 @@ name = "wow-chunk"
 version = "0.1.0"
 
 [[package]]
+name = "wow-formats-dump"
+version = "0.1.0"
+dependencies = [
+ "wow-adt",
+ "wow-chunk",
+]
+
+[[package]]
 name = "wow-m2"
 version = "0.1.0"
 dependencies = [

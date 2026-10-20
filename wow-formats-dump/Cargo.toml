@@ -1,0 +1,8 @@
+[package]
+name = "wow-formats-dump"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wow-adt = { path = "../wow-adt", default-features = false }
+wow-chunk.workspace = true

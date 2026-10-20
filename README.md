@@ -8,6 +8,9 @@ Engine-independent World of Warcraft binary readers extracted from `world-of-oss
 | `wow-m2` | MD20/MD21 model chunks, `.skin`, collision geometry, file references | `animation`, `attachments`, `materials`, `particles`, `ribbons`, `lights`, `cameras`, `events`, `textures`; `render` enables all |
 | `wow-wmo` | WMO root/group chunks and FDID references | `render` (batch geometry), `fog`, `portals` |
 | `wow-adt` | ADT root, `_tex0`, `_obj`, LOD, water and WDT metadata | `geometry` (terrain/water mesh helpers) |
+| `wow-formats-dump` | CLI printing one JSON line of a projection for non-Rust tools: `adt-height <root.adt>` (every MCNK's index/origin/area/holes and every MCVT, with framing problems as data) | None |
+
+Install the CLI at a pinned revision with `cargo install --locked --git https://github.com/world-of-osso/wow-formats.git --rev <commit> wow-formats-dump --root <dir>`. Callers keep selection, validation and error policy. Floats are exact f32 values widened to f64; non-finite values use Python's `NaN`/`Infinity` JSON tokens.
 
 Default features preserve the client's complete parser surface. Geometry consumers can use `default-features = false`; M2 rendering-data features that read animation tracks enable `animation`. Static attachment lookup uses only `attachments`; raw materials and skin batches use only `materials`. `textures` enables material metadata plus animation for render-batch sampling/composition. Geometry tools can enable `animation` separately when eye/head posing needs bone tracks, without compiling emitters, lights, cameras, events or texture composition. WMO/ADT raw chunk records remain available without optional presentation helpers. ADT and WMO reference models by FileDataID only; neither depends on `wow-m2` or the other format crate. Their only shared workspace dependency is `wow-chunk`. External dependencies are `binrw` and `glam` 0.32.
 

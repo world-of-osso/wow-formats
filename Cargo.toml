@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["wow-chunk", "wow-m2", "wow-wmo", "wow-adt"]
+members = ["wow-chunk", "wow-m2", "wow-wmo", "wow-adt", "wow-formats-dump"]
 
 [workspace.package]
 version = "0.1.0"
