@@ -31,6 +31,57 @@ fn md20_with_bones(bones: &[(i32, u32, i16, u16, [f32; 3])]) -> Vec<u8> {
 }
 
 #[test]
+fn chained_aliases_read_target_headers_and_external_keys() {
+    let mut data = vec![0u8; 256];
+    let write = |data: &mut [u8], offset: usize, value: u32| {
+        data[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+    };
+    // One bone: translation headers for target 0 and aliases 1, 2.
+    let block = BONE_TRANSLATION_BLOCK_OFFSET;
+    write(&mut data, block + 4, 3);
+    write(&mut data, block + 8, 100);
+    write(&mut data, block + 12, 3);
+    write(&mut data, block + 16, 124);
+    write(&mut data, 100, 1);
+    write(&mut data, 104, 0);
+    write(&mut data, 124, 1);
+    write(&mut data, 128, 4);
+    // Alias headers are intentionally invalid: they must never be read.
+    write(&mut data, 108, u32::MAX);
+    write(&mut data, 116, u32::MAX);
+    let mut external = Vec::new();
+    external.extend_from_slice(&42u32.to_le_bytes());
+    for value in [1.0_f32, 2.0, 3.0] {
+        external.extend_from_slice(&value.to_le_bytes());
+    }
+    let sources = [
+        SequenceData::External(&external),
+        SequenceData::Alias(0),
+        SequenceData::Alias(1),
+    ];
+    let tracks = parse_bone_animations_with(&data, 0, 1, &sources).unwrap();
+    let keys = &tracks[0].translation.sequences;
+    assert_eq!(keys[0], (vec![42], vec![[1.0, 2.0, 3.0]]));
+    assert_eq!(keys[1], keys[0]);
+    assert_eq!(keys[2], keys[0]);
+}
+
+#[test]
+fn cyclic_and_invalid_aliases_fail_explicitly() {
+    let mut data = vec![0u8; 160];
+    let block = BONE_TRANSLATION_BLOCK_OFFSET;
+    for offset in [block + 4, block + 12] {
+        data[offset..offset + 4].copy_from_slice(&1u32.to_le_bytes());
+    }
+    for source in [SequenceData::Alias(0), SequenceData::Alias(1)] {
+        let error = parse_bone_animations_with(&data, 0, 1, &[source])
+            .err()
+            .unwrap();
+        assert!(error.contains("alias"), "{error}");
+    }
+}
+
+#[test]
 fn parse_zero_bones() {
     // MD20 with count=0 at offset 0x2C
     let mut md20 = vec![0u8; 0x48];

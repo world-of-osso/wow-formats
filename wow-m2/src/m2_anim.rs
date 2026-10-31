@@ -123,6 +123,8 @@ pub struct M2AnimSequence {
     pub replay: [u32; 2],
     /// Next candidate in this animation's variation list, not a temporal successor.
     pub variation_next: i16,
+    /// Sequence index whose keys an alias uses.
+    pub alias_next: u16,
     /// `M2Bounds.extent` (min, max) in WoW model-local coordinates: the box this
     /// sequence's posed vertices stay inside.
     pub bounds: [[f32; 3]; 2],
@@ -150,6 +152,7 @@ pub fn parse_sequences_at(
             frequency: read_i16(data, base + 0x10)?,
             replay: [read_u32(data, base + 0x14)?, read_u32(data, base + 0x18)?],
             variation_next: read_i16(data, base + SEQ_VARIATION_NEXT_OFFSET)?,
+            alias_next: read_u16(data, base + SEQ_ALIAS_NEXT_OFFSET)?,
             bounds: [
                 read_vec3(data, base + SEQ_BOUNDS_OFFSET)?,
                 read_vec3(data, base + SEQ_BOUNDS_OFFSET + 12)?,
@@ -244,6 +247,7 @@ pub enum SequenceData<'a> {
     InFile,
     External(&'a [u8]),
     Missing,
+    Alias(usize),
 }
 
 /// An in-file `M2Track<float>` at `block_offset` of the MD20 blob.
@@ -316,7 +320,11 @@ fn parse_anim_track<T: Copy>(
 
     let mut sequences = Vec::with_capacity(count);
     for i in 0..count {
-        let source = sources.get(i).copied().unwrap_or(SequenceData::InFile);
+        let (target, source) = resolve_sequence_source(sources, i)?;
+        if target >= count {
+            sequences.push((Vec::new(), Vec::new()));
+            continue;
+        }
         let elements = match source {
             SequenceData::InFile => md20,
             SequenceData::External(file) => file,
@@ -324,10 +332,11 @@ fn parse_anim_track<T: Copy>(
                 sequences.push((Vec::new(), Vec::new()));
                 continue;
             }
+            SequenceData::Alias(_) => unreachable!("alias source was resolved"),
         };
-        let keyframes =
-            read_inner_u32_array(md20, elements, ts_outer_offset + i * 8).and_then(|timestamps| {
-                let inner = keys_outer_offset + i * 8;
+        let keyframes = read_inner_u32_array(md20, elements, ts_outer_offset + target * 8)
+            .and_then(|timestamps| {
+                let inner = keys_outer_offset + target * 8;
                 read_inner_value_array(md20, elements, inner, value_size, &parse_value)
                     .map(|values| (timestamps, values))
             });
@@ -382,8 +391,28 @@ fn read_inner_value_array<T: Copy>(
     Ok(out)
 }
 
-/// Each sequence's keyframe source: in the file for `M2_SEQUENCE_IN_FILE` and aliases,
-/// else the track chunk loaded for its (id, variation) `AFID` entry.
+/// Follow alias links before selecting a track header or its element source.
+pub fn resolve_sequence_source<'a>(
+    sources: &[SequenceData<'a>],
+    index: usize,
+) -> Result<(usize, SequenceData<'a>), String> {
+    let mut target = index;
+    for _ in 0..=sources.len() {
+        match sources.get(target).copied() {
+            Some(SequenceData::Alias(next)) if next < sources.len() => target = next,
+            Some(SequenceData::Alias(next)) => {
+                return Err(format!(
+                    "M2 sequence {target} alias target {next} out of bounds"
+                ));
+            }
+            Some(source) => return Ok((target, source)),
+            None => return Ok((target, SequenceData::InFile)),
+        }
+    }
+    Err(format!("M2 sequence {index} has a cyclic alias"))
+}
+
+/// Each sequence's keyframe source or alias target.
 pub fn sequence_data_sources<'a>(
     sequences: &[M2AnimSequence],
     anim_files: &'a std::collections::HashMap<(u16, u16), Vec<u8>>,
@@ -391,7 +420,10 @@ pub fn sequence_data_sources<'a>(
     sequences
         .iter()
         .map(|sequence| {
-            if sequence.flags & (M2_SEQUENCE_IN_FILE | M2_SEQUENCE_ALIAS) != 0 {
+            if sequence.flags & M2_SEQUENCE_ALIAS != 0 {
+                return SequenceData::Alias(usize::from(sequence.alias_next));
+            }
+            if sequence.flags & M2_SEQUENCE_IN_FILE != 0 {
                 return SequenceData::InFile;
             }
             anim_files

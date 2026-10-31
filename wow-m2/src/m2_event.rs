@@ -14,7 +14,7 @@
 //! skeleton's sequences and an external sequence's timestamps are in its `.anim` file's
 //! `AFM2` chunk (wowdev.wiki/M2 ".anim files").
 
-use super::m2_anim::{SequenceData, read_inner_u32_array};
+use super::m2_anim::{SequenceData, read_inner_u32_array, resolve_sequence_source};
 use wow_chunk::{read_m2_array_header, read_u32, read_vec3};
 
 const MD20_EVENTS_COUNT_OFFSET: usize = 0x100;
@@ -46,20 +46,21 @@ pub fn parse_events(md20: &[u8], sources: &[SequenceData<'_>]) -> Result<Vec<M2E
             let (sequences, outer) = read_m2_array_header(md20, track + 4)?;
             let timestamps = (0..sequences)
                 .map(|sequence| {
-                    let inner = outer + sequence * 8;
-                    match sources.get(sequence).copied() {
-                        None | Some(SequenceData::InFile) => {
-                            read_inner_u32_array(md20, md20, inner)
-                        }
+                    let (target, source) = resolve_sequence_source(sources, sequence)?;
+                    if target >= sequences {
+                        return Ok(Vec::new());
+                    }
+                    let inner = outer + target * 8;
+                    match source {
+                        SequenceData::InFile => read_inner_u32_array(md20, md20, inner),
                         // Like bone tracks, an `.anim` track past its chunk has no keys.
-                        Some(SequenceData::External(file)) => Ok(read_inner_u32_array(
-                            md20, file, inner,
-                        )
-                        .unwrap_or_else(|error| {
-                            eprintln!("M2 event {i} sequence {sequence}: .anim track: {error}");
-                            Vec::new()
-                        })),
-                        Some(SequenceData::Missing) => Ok(Vec::new()),
+                        SequenceData::External(file) => Ok(read_inner_u32_array(md20, file, inner)
+                            .unwrap_or_else(|error| {
+                                eprintln!("M2 event {i} sequence {sequence}: .anim track: {error}");
+                                Vec::new()
+                            })),
+                        SequenceData::Missing => Ok(Vec::new()),
+                        SequenceData::Alias(_) => unreachable!("alias source was resolved"),
                     }
                 })
                 .collect::<Result<_, String>>()
