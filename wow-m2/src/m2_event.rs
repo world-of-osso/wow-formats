@@ -75,3 +75,33 @@ pub fn parse_events(md20: &[u8], sources: &[SequenceData<'_>]) -> Result<Vec<M2E
         })
         .collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn aliased_events_read_target_header_and_external_timestamps() {
+        let mut data = vec![0u8; 0x200];
+        let write = |data: &mut [u8], offset: usize, value: u32| {
+            data[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        };
+        write(&mut data, 0x100, 1);
+        write(&mut data, 0x104, 0x120);
+        data[0x120..0x124].copy_from_slice(b"$FSD");
+        write(&mut data, 0x120 + EVENT_TRACK_OFFSET + 4, 3);
+        write(&mut data, 0x120 + EVENT_TRACK_OFFSET + 8, 0x160);
+        write(&mut data, 0x160, 1);
+        write(&mut data, 0x164, 0);
+        write(&mut data, 0x168, u32::MAX);
+        write(&mut data, 0x170, u32::MAX);
+        let external = 42u32.to_le_bytes();
+        let sources = [
+            SequenceData::External(&external),
+            SequenceData::Alias(0),
+            SequenceData::Alias(1),
+        ];
+        let events = parse_events(&data, &sources).unwrap();
+        assert_eq!(events[0].timestamps, vec![vec![42], vec![42], vec![42]]);
+    }
+}
