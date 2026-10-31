@@ -460,6 +460,39 @@ pub fn parse_skel_data_with_anims(
     Ok(result)
 }
 
+/// The parent skeleton referenced by an SKPD chunk, if any.
+pub fn parent_skeleton_fdid(data: &[u8]) -> Result<Option<u32>, String> {
+    let Some(chunk) = find_direct_chunk(data, b"SKPD")? else {
+        return Ok(None);
+    };
+    let fdid = read_u32(chunk, 8).map_err(|error| format!("SKPD parent: {error}"))?;
+    Ok((fdid != 0).then_some(fdid))
+}
+
+/// Animation IDs the model's PABC chunk excludes from its parent skeleton.
+pub fn parent_animation_blacklist(data: &[u8]) -> Result<Vec<u16>, String> {
+    let Some(chunk) = find_direct_chunk(data, b"PABC")? else {
+        return Ok(Vec::new());
+    };
+    if chunk.len() % 2 != 0 {
+        return Err("PABC animation ID list has an incomplete entry".into());
+    }
+    Ok(chunk
+        .chunks_exact(2)
+        .map(|entry| u16::from_le_bytes([entry[0], entry[1]]))
+        .collect())
+}
+
+fn find_direct_chunk<'a>(data: &'a [u8], wanted: &[u8; 4]) -> Result<Option<&'a [u8]>, String> {
+    for chunk in wow_chunk::ChunkIter::new(data) {
+        let (tag, payload) = chunk?;
+        if tag == wanted {
+            return Ok(Some(payload));
+        }
+    }
+    Ok(None)
+}
+
 /// The skeleton's `AFID` entries (its external sequences' `.anim` files).
 pub fn skeleton_afid(data: &[u8]) -> Result<Vec<(u16, u16, u32)>, String> {
     let mut off = 0;
